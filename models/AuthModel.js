@@ -7,13 +7,9 @@ class AuthModel {
   // Validate login credentials
   static validateLoginData(loginData) {
     const errors = [];
-    
-    if (!loginData.email || typeof loginData.email !== 'string' || loginData.email.trim().length === 0) {
-      errors.push('Email is required');
-    }
-    
-    if (loginData.email && !this.isValidEmail(loginData.email)) {
-      errors.push('Email format is invalid');
+       
+    if (!loginData.username) {
+      errors.push('Username is required');
     }
     
     if (!loginData.password || typeof loginData.password !== 'string' || loginData.password.length !== 64) {
@@ -49,15 +45,15 @@ class AuthModel {
   static async authenticateUser(username, sha256Password) {
     try {
       // Validate input
-      const validation = this.validateLoginData({ email: username, password: sha256Password });
+      const validation = this.validateLoginData({ username: username, password: sha256Password });
       if (!validation.isValid) {
         throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
       }
 
-      // Find user by email
-      const user = await this.findUserByEmail(email);
+      // Find user by username
+      const user = await this.findUserByUsername(username);
       if (!user) {
-        throw new Error('Invalid email or password');
+        throw new Error('Invalid username or password');
       }
 
       // Check if user has a password field
