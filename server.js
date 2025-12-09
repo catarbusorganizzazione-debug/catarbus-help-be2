@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const mongoService = require('./services/mongoService');
 const UserModel = require('./models/UserModel');
+const AuthModel = require('./models/AuthModel');
 
 // Load environment variables
 dotenv.config();
@@ -26,6 +27,13 @@ app.get('/', (req, res) => {
     message: 'Welcome to Catarbus Help Backend with MongoDB!',
     version: '1.0.0',
     endpoints: {
+      auth: {
+        'POST /auth/login': 'User login with email and SHA256 password',
+        'POST /auth/register': 'Register new user with SHA256 password',
+        'POST /auth/change-password': 'Change user password',
+        'POST /auth/reset-password': 'Reset user password (admin)',
+        'GET /auth/stats': 'Get login statistics'
+      },
       users: {
         'GET /users': 'Get all users (with pagination)',
         'GET /users/:id': 'Get user by ID',
@@ -38,6 +46,111 @@ app.get('/', (req, res) => {
     }
   });
 });
+
+// AUTH ENDPOINTS
+
+// User login endpoint
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    const result = await AuthModel.authenticateUser(username, password);
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: result
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(401).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
+// User registration endpoint
+app.post('/auth/register', async (req, res) => {
+  try {
+    const user = await AuthModel.createUserWithPassword(req.body);
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
+// Change password endpoint
+app.post('/auth/change-password', async (req, res) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+    
+    if (!userId || !oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId, oldPassword, and newPassword are required'
+      });
+    }
+    
+    const result = await AuthModel.changePassword(userId, oldPassword, newPassword);
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
+// Reset password endpoint (admin only)
+app.post('/auth/reset-password', async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+    
+    if (!userId || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId and newPassword are required'
+      });
+    }
+    
+    const result = await AuthModel.resetPassword(userId, newPassword);
+    res.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
+// Get login statistics
+app.get('/auth/stats', async (req, res) => {
+  try {
+    const stats = await AuthModel.getLoginStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching auth stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// USER ENDPOINTS
 
 // Route to get user statistics
 app.get('/users/stats', async (req, res) => {
@@ -151,14 +264,19 @@ async function startServer() {
       console.log(`Server running on http://localhost:${PORT}`);
       console.log(`MongoDB connected to: ${process.env.MONGODB_URI}`);
       console.log('Available endpoints:');
-      console.log('  GET /                    - API documentation');
-      console.log('  GET /users               - Get all users');
-      console.log('  GET /users/:id           - Get user by ID');
-      console.log('  GET /users/search/:term  - Search users');
-      console.log('  GET /users/stats         - Get user statistics');
-      console.log('  POST /users              - Create new user');
-      console.log('  PUT /users/:id           - Update user');
-      console.log('  DELETE /users/:id        - Delete user');
+      console.log('  GET /                         - API documentation');
+      console.log('  POST /auth/login              - User login');
+      console.log('  POST /auth/register           - Register new user');
+      console.log('  POST /auth/change-password    - Change password');
+      console.log('  POST /auth/reset-password     - Reset password');
+      console.log('  GET /auth/stats               - Login statistics');
+      console.log('  GET /users                    - Get all users');
+      console.log('  GET /users/:id                - Get user by ID');
+      console.log('  GET /users/search/:term       - Search users');
+      console.log('  GET /users/stats              - Get user statistics');
+      console.log('  POST /users                   - Create new user');
+      console.log('  PUT /users/:id                - Update user');
+      console.log('  DELETE /users/:id             - Delete user');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
