@@ -62,6 +62,86 @@ curl -X POST http://localhost:3001/auth/reset-password \
 curl -X GET http://localhost:3001/auth/stats
 ```
 
+## Appointment Endpoints
+
+### 1. Create a new appointment
+```bash
+curl -X POST http://localhost:3001/appointments \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "65a1b2c3d4e5f6789abcdef0",
+    "title": "Consulenza tecnica",
+    "description": "Consulenza per problemi di connettività",
+    "date": "2024-12-15",
+    "time": "10:30",
+    "duration": 60,
+    "status": "scheduled",
+    "notes": "Cliente ha problemi con la linea internet"
+  }'
+```
+
+### 2. Get all appointments
+```bash
+# Get all appointments (with pagination)
+curl -X GET http://localhost:3001/appointments
+
+# Filter by status
+curl -X GET "http://localhost:3001/appointments?status=scheduled"
+
+# Filter by date
+curl -X GET "http://localhost:3001/appointments?date=2024-12-15"
+
+# Pagination
+curl -X GET "http://localhost:3001/appointments?page=2&limit=5"
+```
+
+### 3. Get appointment by ID
+```bash
+# Replace {appointment_id} with actual MongoDB ObjectId
+curl -X GET http://localhost:3001/appointments/{appointment_id}
+```
+
+### 4. Get appointments by user ID
+```bash
+# Replace {user_id} with actual MongoDB ObjectId
+curl -X GET http://localhost:3001/appointments/user/{user_id}
+
+# With pagination
+curl -X GET "http://localhost:3001/appointments/user/{user_id}?page=1&limit=10"
+```
+
+### 5. Get appointments by date range
+```bash
+# Get appointments between two dates
+curl -X GET http://localhost:3001/appointments/date/2024-12-01/2024-12-31
+
+# With pagination
+curl -X GET "http://localhost:3001/appointments/date/2024-12-01/2024-12-31?page=1&limit=20"
+```
+
+### 6. Update appointment
+```bash
+# Replace {appointment_id} with actual MongoDB ObjectId
+curl -X PUT http://localhost:3001/appointments/{appointment_id} \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Consulenza tecnica aggiornata",
+    "status": "confirmed",
+    "notes": "Cliente confermato per appuntamento"
+  }'
+```
+
+### 7. Get appointment statistics
+```bash
+curl -X GET http://localhost:3001/appointments/stats
+```
+
+### 8. Delete appointment
+```bash
+# Replace {appointment_id} with actual MongoDB ObjectId
+curl -X DELETE http://localhost:3001/appointments/{appointment_id}
+```
+
 ## SHA256 Password Examples
 
 For testing, here are some common passwords and their SHA256 hashes:
@@ -141,15 +221,69 @@ curl -X DELETE http://localhost:3001/users/{user_id}
 
 ## Example Responses
 
-### User Creation Success Response
+### Appointment Creation Success Response
 ```json
 {
-  "_id": "65a1b2c3d4e5f6789abcdef0",
-  "name": "Mario Rossi",
-  "email": "mario.rossi@email.com",
-  "status": "active",
+  "_id": "65a1b2c3d4e5f6789abcdef1",
+  "title": "Consulenza tecnica",
+  "description": "Consulenza per problemi di connettività",
+  "date": "2024-12-15",
+  "time": "10:30",
+  "duration": 60,
+  "status": "scheduled",
+  "notes": "Cliente ha problemi con la linea internet",
   "createdAt": "2023-12-08T10:30:45.123Z",
-  "updatedAt": "2023-12-08T10:30:45.123Z"
+  "updatedAt": "2023-12-08T10:30:45.123Z",
+  "user": {
+    "_id": "65a1b2c3d4e5f6789abcdef0",
+    "name": "Mario Rossi",
+    "email": "mario.rossi@email.com"
+  }
+}
+```
+
+### Appointments List Response
+```json
+{
+  "appointments": [
+    {
+      "_id": "65a1b2c3d4e5f6789abcdef1",
+      "title": "Consulenza tecnica",
+      "description": "Consulenza per problemi di connettività",
+      "date": "2024-12-15",
+      "time": "10:30",
+      "duration": 60,
+      "status": "scheduled",
+      "notes": "Cliente ha problemi con la linea internet",
+      "createdAt": "2023-12-08T10:30:45.123Z",
+      "updatedAt": "2023-12-08T10:30:45.123Z",
+      "user": {
+        "_id": "65a1b2c3d4e5f6789abcdef0",
+        "name": "Mario Rossi",
+        "email": "mario.rossi@email.com"
+      }
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 1,
+    "totalAppointments": 1,
+    "hasNextPage": false,
+    "hasPrevPage": false
+  }
+}
+```
+
+### Appointment Statistics Response
+```json
+{
+  "totalAppointments": 25,
+  "scheduledAppointments": 10,
+  "confirmedAppointments": 8,
+  "completedAppointments": 5,
+  "cancelledAppointments": 2,
+  "todayAppointments": 3,
+  "upcomingAppointments": 12
 }
 ```
 
@@ -219,20 +353,45 @@ function Get-SHA256Hash($inputString) {
 Get-SHA256Hash "mypassword"
 ```
 
-### Create Basic User (without password)
+### Create Appointment
 ```powershell
-$userBody = @{
-    name = "Anna Verde"
-    email = "anna.verde@email.com"
+$appointmentBody = @{
+    userId = "65a1b2c3d4e5f6789abcdef0"  # Replace with actual user ID
+    title = "Consulenza IT"
+    description = "Supporto tecnico per configurazione rete"
+    date = "2024-12-15"
+    time = "14:30"
+    duration = 45
+    status = "scheduled"
+    notes = "Cliente preferisce chiamata telefonica"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:3001/users" -Method POST -Body $userBody -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:3001/appointments" -Method POST -Body $appointmentBody -ContentType "application/json"
+```
+
+### Get User Appointments
+```powershell
+# Replace with actual user ID
+$userId = "65a1b2c3d4e5f6789abcdef0"
+Invoke-RestMethod -Uri "http://localhost:3001/appointments/user/$userId" -Method GET
+```
+
+### Get Appointments by Date Range
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3001/appointments/date/2024-12-01/2024-12-31" -Method GET
 ```
 
 ## Notes
 
-1. **MongoDB ObjectId**: User IDs are MongoDB ObjectIds (24 character hex strings)
-2. **Validation**: Names must be at least 2 characters, emails must be valid format
-3. **Pagination**: Default page size is 10, can be customized with `limit` parameter
-4. **Timestamps**: `createdAt` and `updatedAt` are automatically managed
-5. **Error Handling**: All endpoints return appropriate HTTP status codes and error messages
+1. **MongoDB ObjectId**: User and Appointment IDs are MongoDB ObjectIds (24 character hex strings)
+2. **Date Format**: Dates must be in YYYY-MM-DD format
+3. **Time Format**: Times must be in HH:MM format (24-hour)
+4. **Appointment Validation**: 
+   - Title minimum 3 characters
+   - Valid userId required
+   - No scheduling conflicts for same user at same date/time
+5. **Status Values**: scheduled, confirmed, completed, cancelled
+6. **Duration**: In minutes (default: 30)
+7. **Pagination**: Default page size is 10, can be customized with `limit` parameter
+8. **Timestamps**: `createdAt` and `updatedAt` are automatically managed
+9. **User Lookup**: Appointment responses include user information via MongoDB aggregation

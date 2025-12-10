@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const mongoService = require('./services/mongoService');
 const UserModel = require('./models/UserModel');
 const AuthModel = require('./models/AuthModel');
+const AppointmentModel = require('./models/AppointmentModel');
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,16 @@ app.get('/', (req, res) => {
         'POST /auth/change-password': 'Change user password',
         'POST /auth/reset-password': 'Reset user password (admin)',
         'GET /auth/stats': 'Get login statistics'
+      },
+      appointments: {
+        'GET /appointments': 'Get all appointments (with pagination)',
+        'GET /appointments/:id': 'Get appointment by ID',
+        'GET /appointments/user/:userId': 'Get appointments by user ID',
+        'GET /appointments/date/:startDate/:endDate': 'Get appointments by date range',
+        'GET /appointments/stats': 'Get appointment statistics',
+        'POST /appointments': 'Create new appointment',
+        'PUT /appointments/:id': 'Update appointment by ID',
+        'DELETE /appointments/:id': 'Delete appointment by ID'
       },
       users: {
         'GET /users': 'Get all users (with pagination)',
@@ -164,6 +175,130 @@ app.get('/auth/stats', async (req, res) => {
   }
 });
 
+// APPOINTMENT ENDPOINTS
+
+// Get appointment statistics
+app.get('/appointments/stats', async (req, res) => {
+  try {
+    const stats = await AppointmentModel.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching appointment stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get appointments by date range
+app.get('/appointments/date/:startDate/:endDate', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    
+    const result = await AppointmentModel.findByDateRange(startDate, endDate, {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching appointments by date range:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get appointments by user ID
+app.get('/appointments/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    
+    const result = await AppointmentModel.findByUserId(userId, {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching user appointments:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all appointments
+app.get('/appointments', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, date } = req.query;
+    const filter = {};
+    
+    if (status) filter.status = status;
+    if (date) filter.date = date;
+    
+    const result = await AppointmentModel.findAll(filter, {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get appointment by ID
+app.get('/appointments/:id', async (req, res) => {
+  try {
+    const appointment = await AppointmentModel.findById(req.params.id);
+    
+    if (appointment) {
+      res.json(appointment);
+    } else {
+      res.status(404).json({ error: 'Appointment not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching appointment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new appointment
+app.post('/appointments', async (req, res) => {
+  try {
+    const appointment = await AppointmentModel.create(req.body);
+    res.status(201).json(appointment);
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Update appointment by ID
+app.put('/appointments/:id', async (req, res) => {
+  try {
+    const appointment = await AppointmentModel.updateById(req.params.id, req.body);
+    res.json(appointment);
+  } catch (error) {
+    console.error('Error updating appointment:', error);
+    if (error.message.includes('not found')) {
+      res.status(404).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: error.message });
+    }
+  }
+});
+
+// Delete appointment by ID
+app.delete('/appointments/:id', async (req, res) => {
+  try {
+    const result = await AppointmentModel.deleteById(req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting appointment:', error);
+    if (error.message.includes('not found')) {
+      res.status(404).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 // USER ENDPOINTS
 
 // Route to get user statistics
@@ -278,19 +413,27 @@ async function startServer() {
       console.log(`Server running on http://localhost:${PORT}`);
       console.log(`MongoDB connected to: ${process.env.MONGODB_URI}`);
       console.log('Available endpoints:');
-      console.log('  GET /                         - API documentation');
-      console.log('  POST /auth/login              - User login');
-      console.log('  POST /auth/register           - Register new user');
-      console.log('  POST /auth/change-password    - Change password');
-      console.log('  POST /auth/reset-password     - Reset password');
-      console.log('  GET /auth/stats               - Login statistics');
-      console.log('  GET /users                    - Get all users');
-      console.log('  GET /users/:id                - Get user by ID');
-      console.log('  GET /users/search/:term       - Search users');
-      console.log('  GET /users/stats              - Get user statistics');
-      console.log('  POST /users                   - Create new user');
-      console.log('  PUT /users/:id                - Update user');
-      console.log('  DELETE /users/:id             - Delete user');
+      console.log('  GET /                                    - API documentation');
+      console.log('  POST /auth/login                         - User login');
+      console.log('  POST /auth/register                      - Register new user');
+      console.log('  POST /auth/change-password               - Change password');
+      console.log('  POST /auth/reset-password                - Reset password');
+      console.log('  GET /auth/stats                          - Login statistics');
+      console.log('  GET /appointments                        - Get all appointments');
+      console.log('  GET /appointments/:id                    - Get appointment by ID');
+      console.log('  GET /appointments/user/:userId           - Get appointments by user');
+      console.log('  GET /appointments/date/:start/:end       - Get appointments by date range');
+      console.log('  GET /appointments/stats                  - Get appointment statistics');
+      console.log('  POST /appointments                       - Create new appointment');
+      console.log('  PUT /appointments/:id                    - Update appointment');
+      console.log('  DELETE /appointments/:id                 - Delete appointment');
+      console.log('  GET /users                               - Get all users');
+      console.log('  GET /users/:id                           - Get user by ID');
+      console.log('  GET /users/search/:term                  - Search users');
+      console.log('  GET /users/stats                         - Get user statistics');
+      console.log('  POST /users                              - Create new user');
+      console.log('  PUT /users/:id                           - Update user');
+      console.log('  DELETE /users/:id                        - Delete user');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
