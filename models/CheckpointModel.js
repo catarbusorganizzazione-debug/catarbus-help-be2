@@ -242,6 +242,68 @@ class CheckpointModel {
     }
   }
 
+  // Update checkpoint by internalId
+  static async updateByInternalId(internalId, updateData) {
+    try {
+      // Validate update data if present
+      if (Object.keys(updateData).length === 0) {
+        throw new Error('No update data provided');
+      }
+
+      // Validate fields if they exist in update data
+      if (updateData.internalId || updateData.location || updateData.isMajorCheckpoint !== undefined) {
+        const validation = this.validateCheckpoint({ 
+          internalId: 'temp', 
+          location: 'temp', 
+          isMajorCheckpoint: true,
+          ...updateData 
+        });
+        
+        if (!validation.isValid) {
+          throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+        }
+      }
+
+      // Check if new internalId already exists (if being updated)
+      if (updateData.internalId && updateData.internalId !== internalId) {
+        const existingCheckpoint = await mongoService.findOne(this.collectionName, {
+          internalId: updateData.internalId
+        });
+        if (existingCheckpoint) {
+          throw new Error('Checkpoint with this internalId already exists');
+        }
+      }
+
+      // Clean update data
+      const cleanUpdateData = {};
+      if (updateData.internalId) cleanUpdateData.internalId = updateData.internalId.trim();
+      if (updateData.location) cleanUpdateData.location = updateData.location.trim();
+      if (updateData.description !== undefined) cleanUpdateData.description = updateData.description ? updateData.description.trim() : null;
+      if (updateData.isMajorCheckpoint !== undefined) cleanUpdateData.isMajorCheckpoint = updateData.isMajorCheckpoint;
+      if (updateData.result !== undefined) cleanUpdateData.result = updateData.result;
+
+      // Update checkpoint
+      const result = await mongoService.findOneAndUpdate(
+        this.collectionName,
+        { internalId: internalId },
+        { $set: updateData }
+      );
+
+      if (!result) {
+        throw new Error('Checkpoint not found');
+      }
+
+      // Return updated checkpoint by finding it again
+      const updatedCheckpoint = await mongoService.findOne(this.collectionName, {
+        internalId: updateData.internalId || internalId
+      });
+      
+      return updatedCheckpoint;
+    } catch (error) {
+      throw new Error(`Failed to update checkpoint: ${error.message}`);
+    }
+  }
+
   // Update checkpoint result
   static async updateResult(id, result) {
     try {
@@ -257,7 +319,7 @@ class CheckpointModel {
 
       const updateResult = await mongoService.findOneAndUpdate(
         this.collectionName,
-        { _id: mongoService.createObjectId(id) },
+        { internalId: id },
         { $set: updateData }
       );
 
@@ -265,7 +327,46 @@ class CheckpointModel {
         throw new Error('Checkpoint not found');
       }
 
-      return await this.findById(id);
+      // Return updated checkpoint
+      const updatedCheckpoint = await mongoService.findOne(this.collectionName, {
+        internalId: id
+      });
+      
+      return updatedCheckpoint;
+    } catch (error) {
+      throw new Error(`Failed to update checkpoint result: ${error.message}`);
+    }
+  }
+
+  // Update checkpoint result by internalId
+  static async updateResultByInternalId(internalId, result) {
+    try {
+      // Validate result if provided
+      if (result && !this.isValidResult(result)) {
+        throw new Error('Result must be an object with message (string) and data (any type or null)');
+      }
+
+      const updateData = {
+        result: result,
+        updatedAt: new Date()
+      };
+
+      const updateResult = await mongoService.findOneAndUpdate(
+        this.collectionName,
+        { internalId: internalId },
+        { $set: updateData }
+      );
+
+      if (!updateResult) {
+        throw new Error('Checkpoint not found');
+      }
+
+      // Return updated checkpoint
+      const updatedCheckpoint = await mongoService.findOne(this.collectionName, {
+        internalId: internalId
+      });
+      
+      return updatedCheckpoint;
     } catch (error) {
       throw new Error(`Failed to update checkpoint result: ${error.message}`);
     }

@@ -69,14 +69,14 @@ app.get('/', (req, res) => {
         'GET /checkpoints/stats': 'Get checkpoint statistics',
         'GET /checkpoints/dashboard': 'Get dashboard data',
         'POST /checkpoints': 'Create new checkpoint',
-        'PUT /checkpoints/:id': 'Update checkpoint by ID',
-        'PUT /checkpoints/:id/result': 'Update checkpoint result',
+        'PUT /checkpoints/:id': 'Update checkpoint by internalId',
+        'PUT /checkpoints/:id/result': 'Update checkpoint result by internalId',
         'DELETE /checkpoints/:id': 'Delete checkpoint by ID'
       },
       users: {
         'GET /users': 'Get all users (with pagination)',
         'GET /users/:id': 'Get user by ID',
-        'GET /users/search/:term': 'Search users by name or email',
+        'GET /users/search/:term': 'Search users by name or email or username',
         'GET /users/stats': 'Get user statistics',
         'POST /users': 'Create new user',
         'PUT /users/:id': 'Update user by ID',
@@ -435,38 +435,61 @@ app.post('/checkpoints', async (req, res) => {
   }
 });
 
-// Update checkpoint by ID
+// Update checkpoint by internalId
 app.put('/checkpoints/:id', async (req, res) => {
   try {
-    const checkpoint = await CheckpointModel.updateById(req.params.id, req.body);
-    res.json(checkpoint);
+    const checkpoint = await CheckpointModel.updateByInternalId(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: 'Checkpoint updated successfully',
+      data: checkpoint
+    });
   } catch (error) {
     console.error('Error updating checkpoint:', error);
     if (error.message.includes('not found')) {
-      res.status(404).json({ error: error.message });
+      res.status(404).json({ 
+        success: false,
+        error: error.message 
+      });
     } else {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ 
+        success: false,
+        error: error.message 
+      });
     }
   }
 });
 
-// Update checkpoint result
+// Update checkpoint result by internalId
 app.put('/checkpoints/:id/result', async (req, res) => {
   try {
     const { result } = req.body;
     
     if (!result) {
-      return res.status(400).json({ error: 'Result is required' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Result is required' 
+      });
     }
     
-    const checkpoint = await CheckpointModel.updateResult(req.params.id, result);
-    res.json(checkpoint);
+    const checkpoint = await CheckpointModel.updateResultByInternalId(req.params.id, result);
+    res.json({
+      success: true,
+      message: 'Checkpoint result updated successfully',
+      data: checkpoint
+    });
   } catch (error) {
     console.error('Error updating checkpoint result:', error);
     if (error.message.includes('not found')) {
-      res.status(404).json({ error: error.message });
+      res.status(404).json({ 
+        success: false,
+        error: error.message 
+      });
     } else {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ 
+        success: false,
+        error: error.message 
+      });
     }
   }
 });
@@ -647,8 +670,8 @@ async function startServer() {
       console.log('  GET /checkpoints/stats                   - Get checkpoint statistics');
       console.log('  GET /checkpoints/dashboard               - Get dashboard data');
       console.log('  POST /checkpoints                        - Create new checkpoint');
-      console.log('  PUT /checkpoints/:id                     - Update checkpoint');
-      console.log('  PUT /checkpoints/:id/result              - Update checkpoint result');
+      console.log('  PUT /checkpoints/:id                     - Update checkpoint by internalId');
+      console.log('  PUT /checkpoints/:id/result              - Update checkpoint result by internalId');
       console.log('  DELETE /checkpoints/:id                  - Delete checkpoint');
       console.log('  GET /users                               - Get all users');
       console.log('  GET /users/:id                           - Get user by ID');

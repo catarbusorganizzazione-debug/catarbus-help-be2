@@ -189,6 +189,8 @@ class UserModel {
       if (updateData.name) cleanUpdateData.name = updateData.name.trim();
       if (updateData.email !== undefined) cleanUpdateData.email = updateData.email ? updateData.email.trim() : null;
       if (updateData.status) cleanUpdateData.status = updateData.status;
+      if (updateData.checkpointsCompleted) cleanUpdateData.checkpointsCompleted = updateData.checkpointsCompleted;
+      if (updateData.lastCheckpoint) cleanUpdateData.lastCheckpoint = new Date(updateData.lastCheckpoint);
 
       // Update user
       const result = await mongoService.findOneAndUpdate(
@@ -231,7 +233,8 @@ class UserModel {
       const filter = {
         $or: [
           { name: { $regex: searchTerm, $options: 'i' } },
-          { email: { $regex: searchTerm, $options: 'i' } }
+          { email: { $regex: searchTerm, $options: 'i' } },
+          { username: { $regex: searchTerm, $options: 'i' } }
         ]
       };
 
