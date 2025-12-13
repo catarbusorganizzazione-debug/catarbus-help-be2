@@ -162,6 +162,51 @@ class UserModel {
     }
   }
 
+  // Update user by username
+  static async updateByUsername(username, updateData) {
+    try {
+      // Validate update data
+      if (Object.keys(updateData).length === 0) {
+        throw new Error('No update data provided');
+      }
+
+      // Validate fields if they exist in update data
+      const validation = this.validateUser({ name: 'temp', ...updateData });
+      if (updateData.name && !validation.isValid) {
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
+
+      // Check if email already exists (if being updated)
+      if (updateData.email && updateData.email.trim() !== '') {
+        const existingUser = await this.findByEmail(updateData.email);
+        if (existingUser && existingUser.username !== username.trim().toLowerCase()) {
+          throw new Error('User with this email already exists');
+        }
+      }
+
+      // Clean update data
+      const cleanUpdateData = {};
+      if (updateData.name) cleanUpdateData.name = updateData.name.trim();
+      if (updateData.email !== undefined) cleanUpdateData.email = updateData.email ? updateData.email.trim() : null;
+      if (updateData.status) cleanUpdateData.status = updateData.status;
+
+      // Update user
+      const result = await mongoService.findOneAndUpdate(
+        this.collectionName,
+        { username: username.trim().toLowerCase() },
+        { $set: cleanUpdateData }
+      );
+
+      if (!result) {
+        throw new Error('User not found');
+      }
+
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to update user: ${error.message}`);
+    }
+  }
+
   // Delete user by ID
   static async deleteById(id) {
     try {

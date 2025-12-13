@@ -6,6 +6,7 @@ const mongoService = require('./services/mongoService');
 const UserModel = require('./models/UserModel');
 const AuthModel = require('./models/AuthModel');
 const AppointmentModel = require('./models/AppointmentModel');
+const CheckpointModel = require('./models/CheckpointModel');
 
 // Load environment variables
 dotenv.config();
@@ -59,6 +60,19 @@ app.get('/', (req, res) => {
         'PUT /appointments/:id': 'Update appointment by ID',
         'DELETE /appointments/:id': 'Delete appointment by ID'
       },
+      checkpoints: {
+        'GET /checkpoints': 'Get all checkpoints (with pagination)',
+        'GET /checkpoints/:id': 'Get checkpoint by ID',
+        'GET /checkpoints/internalId/:internalId': 'Get checkpoints by internal ID',
+        'GET /checkpoints/location/:location': 'Search checkpoints by location',
+        'GET /checkpoints/major': 'Get major checkpoints only',
+        'GET /checkpoints/stats': 'Get checkpoint statistics',
+        'GET /checkpoints/dashboard': 'Get dashboard data',
+        'POST /checkpoints': 'Create new checkpoint',
+        'PUT /checkpoints/:id': 'Update checkpoint by ID',
+        'PUT /checkpoints/:id/result': 'Update checkpoint result',
+        'DELETE /checkpoints/:id': 'Delete checkpoint by ID'
+      },
       users: {
         'GET /users': 'Get all users (with pagination)',
         'GET /users/:id': 'Get user by ID',
@@ -66,6 +80,7 @@ app.get('/', (req, res) => {
         'GET /users/stats': 'Get user statistics',
         'POST /users': 'Create new user',
         'PUT /users/:id': 'Update user by ID',
+        'PUT /users/editbyusername/:username': 'Update user by username',
         'DELETE /users/:id': 'Delete user by ID'
       }
     }
@@ -299,6 +314,178 @@ app.delete('/appointments/:id', async (req, res) => {
   }
 });
 
+// CHECKPOINT ENDPOINTS
+
+// Get dashboard data
+app.get('/checkpoints/dashboard', async (req, res) => {
+  try {
+    const dashboardData = await CheckpointModel.getDashboardData();
+    res.json(dashboardData);
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get checkpoint statistics
+app.get('/checkpoints/stats', async (req, res) => {
+  try {
+    const stats = await CheckpointModel.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching checkpoint stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get checkpoints by internal ID
+app.get('/checkpoints/internalId/:internalId', async (req, res) => {
+  try {
+    const { internalId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    
+    const result = await CheckpointModel.findByInternalId(internalId, {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching checkpoints by internalId:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get major checkpoints only
+app.get('/checkpoints/major', async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    
+    const result = await CheckpointModel.findMajorCheckpoints({
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching major checkpoints:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Search checkpoints by location
+app.get('/checkpoints/location/:location', async (req, res) => {
+  try {
+    const { location } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    
+    const result = await CheckpointModel.findByLocation(location, {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error searching checkpoints by location:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all checkpoints
+app.get('/checkpoints', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, location, isMajorCheckpoint } = req.query;
+    const filter = {};
+    
+    if (location) filter.location = { $regex: location, $options: 'i' };
+    if (isMajorCheckpoint !== undefined) filter.isMajorCheckpoint = isMajorCheckpoint === 'true';
+    
+    const result = await CheckpointModel.findAll(filter, {
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching checkpoints:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get checkpoint by ID
+app.get('/checkpoints/:id', async (req, res) => {
+  try {
+    const checkpoint = await CheckpointModel.findById(req.params.id);
+    
+    if (checkpoint) {
+      res.json(checkpoint);
+    } else {
+      res.status(404).json({ error: 'Checkpoint not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching checkpoint:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a new checkpoint
+app.post('/checkpoints', async (req, res) => {
+  try {
+    const checkpoint = await CheckpointModel.create(req.body);
+    res.status(201).json(checkpoint);
+  } catch (error) {
+    console.error('Error creating checkpoint:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Update checkpoint by ID
+app.put('/checkpoints/:id', async (req, res) => {
+  try {
+    const checkpoint = await CheckpointModel.updateById(req.params.id, req.body);
+    res.json(checkpoint);
+  } catch (error) {
+    console.error('Error updating checkpoint:', error);
+    if (error.message.includes('not found')) {
+      res.status(404).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: error.message });
+    }
+  }
+});
+
+// Update checkpoint result
+app.put('/checkpoints/:id/result', async (req, res) => {
+  try {
+    const { result } = req.body;
+    
+    if (!result) {
+      return res.status(400).json({ error: 'Result is required' });
+    }
+    
+    const checkpoint = await CheckpointModel.updateResult(req.params.id, result);
+    res.json(checkpoint);
+  } catch (error) {
+    console.error('Error updating checkpoint result:', error);
+    if (error.message.includes('not found')) {
+      res.status(404).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: error.message });
+    }
+  }
+});
+
+// Delete checkpoint by ID
+app.delete('/checkpoints/:id', async (req, res) => {
+  try {
+    const result = await CheckpointModel.deleteById(req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting checkpoint:', error);
+    if (error.message.includes('not found')) {
+      res.status(404).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 // USER ENDPOINTS
 
 // Route to get user statistics
@@ -382,6 +569,31 @@ app.put('/users/:id', async (req, res) => {
   }
 });
 
+// Route to update a user by username
+app.put('/users/editbyusername/:username', async (req, res) => {
+  try {
+    const user = await UserModel.updateByUsername(req.params.username, req.body);
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: user
+    });
+  } catch (error) {
+    console.error('Error updating user by username:', error);
+    if (error.message.includes('not found')) {
+      res.status(404).json({ 
+        success: false,
+        error: error.message 
+      });
+    } else {
+      res.status(400).json({ 
+        success: false,
+        error: error.message 
+      });
+    }
+  }
+});
+
 // Route to delete a user by ID
 app.delete('/users/:id', async (req, res) => {
   try {
@@ -427,6 +639,17 @@ async function startServer() {
       console.log('  POST /appointments                       - Create new appointment');
       console.log('  PUT /appointments/:id                    - Update appointment');
       console.log('  DELETE /appointments/:id                 - Delete appointment');
+      console.log('  GET /checkpoints                         - Get all checkpoints');
+      console.log('  GET /checkpoints/:id                     - Get checkpoint by ID');
+      console.log('  GET /checkpoints/internalId/:internalId  - Get checkpoints by internal ID');
+      console.log('  GET /checkpoints/location/:location      - Search checkpoints by location');
+      console.log('  GET /checkpoints/major                   - Get major checkpoints only');
+      console.log('  GET /checkpoints/stats                   - Get checkpoint statistics');
+      console.log('  GET /checkpoints/dashboard               - Get dashboard data');
+      console.log('  POST /checkpoints                        - Create new checkpoint');
+      console.log('  PUT /checkpoints/:id                     - Update checkpoint');
+      console.log('  PUT /checkpoints/:id/result              - Update checkpoint result');
+      console.log('  DELETE /checkpoints/:id                  - Delete checkpoint');
       console.log('  GET /users                               - Get all users');
       console.log('  GET /users/:id                           - Get user by ID');
       console.log('  GET /users/search/:term                  - Search users');

@@ -142,6 +142,138 @@ curl -X GET http://localhost:3001/appointments/stats
 curl -X DELETE http://localhost:3001/appointments/{appointment_id}
 ```
 
+## Checkpoint Endpoints
+
+The checkpoint system uses a simplified structure with the following fields:
+- `internalId`: string (required, unique identifier)
+- `location`: string (required, checkpoint location)
+- `description`: string (optional, checkpoint description)
+- `isMajorCheckpoint`: boolean (required, whether it's a major checkpoint)
+- `result`: object (optional, with `message` string and `data` any type)
+
+### 1. Create a new checkpoint
+```bash
+curl -X POST http://localhost:3001/checkpoints \
+  -H "Content-Type: application/json" \
+  -d '{
+    "internalId": "CHK001",
+    "location": "Server Room A - Rack 3",
+    "description": "Network connectivity monitoring point",
+    "isMajorCheckpoint": true,
+    "result": {
+      "message": "All systems operational",
+      "data": {
+        "status": "green",
+        "uptime": "99.9%"
+      }
+    }
+  }'
+```
+
+### 2. Get all checkpoints
+```bash
+# Get all checkpoints (with pagination)
+curl -X GET http://localhost:3001/checkpoints
+
+# Filter by location (partial match)
+curl -X GET "http://localhost:3001/checkpoints?location=server"
+
+# Filter by major checkpoints only
+curl -X GET "http://localhost:3001/checkpoints?isMajorCheckpoint=true"
+
+# Pagination
+curl -X GET "http://localhost:3001/checkpoints?page=2&limit=5"
+```
+
+### 3. Get checkpoint by ID
+```bash
+# Replace {checkpoint_id} with actual MongoDB ObjectId
+curl -X GET http://localhost:3001/checkpoints/{checkpoint_id}
+```
+
+### 4. Get checkpoints by internal ID (partial search)
+```bash
+# Search for checkpoints by internal ID
+curl -X GET http://localhost:3001/checkpoints/internalId/CHK
+
+# With pagination
+curl -X GET "http://localhost:3001/checkpoints/internalId/CHK?page=1&limit=10"
+```
+
+### 5. Get major checkpoints only
+```bash
+# Get all major checkpoints
+curl -X GET http://localhost:3001/checkpoints/major
+
+# With pagination
+curl -X GET "http://localhost:3001/checkpoints/major?page=1&limit=20"
+```
+
+### 6. Search checkpoints by location
+```bash
+# Search for checkpoints in server rooms
+curl -X GET http://localhost:3001/checkpoints/location/server
+
+# Search for rack-related checkpoints
+curl -X GET "http://localhost:3001/checkpoints/location/rack?page=1&limit=10"
+```
+
+### 7. Update checkpoint
+```bash
+# Replace {checkpoint_id} with actual MongoDB ObjectId
+curl -X PUT http://localhost:3001/checkpoints/{checkpoint_id} \
+  -H "Content-Type: application/json" \
+  -d '{
+    "location": "Data Center B - Rack 7",
+    "description": "Updated monitoring point for network switches",
+    "isMajorCheckpoint": false,
+    "result": {
+      "message": "Maintenance completed successfully",
+      "data": {
+        "maintenanceId": "MAINT-2024-001",
+        "completedAt": "2024-01-15T10:30:00Z"
+      }
+    }
+  }'
+```
+
+### 8. Update checkpoint result only
+```bash
+# Replace {checkpoint_id} with actual MongoDB ObjectId
+curl -X PUT http://localhost:3001/checkpoints/{checkpoint_id}/result \
+  -H "Content-Type: application/json" \
+  -d '{
+    "result": {
+      "message": "System check completed",
+      "data": {
+        "checkTime": "2024-01-15T14:30:00Z",
+        "status": "operational",
+        "metrics": {
+          "cpu": "45%",
+          "memory": "67%",
+          "disk": "23%"
+        }
+      }
+    }
+  }'
+```
+
+### 9. Get checkpoint statistics
+```bash
+curl -X GET http://localhost:3001/checkpoints/stats
+```
+
+### 10. Get dashboard data
+```bash
+curl -X GET http://localhost:3001/checkpoints/dashboard
+```
+
+### 11. Delete checkpoint
+```bash
+# Replace {checkpoint_id} with actual MongoDB ObjectId
+curl -X DELETE http://localhost:3001/checkpoints/{checkpoint_id}
+```
+
 ## SHA256 Password Examples
 
 For testing, here are some common passwords and their SHA256 hashes:
@@ -274,16 +406,83 @@ curl -X DELETE http://localhost:3001/users/{user_id}
 }
 ```
 
-### Appointment Statistics Response
+### Checkpoint Statistics Response
 ```json
 {
-  "totalAppointments": 25,
-  "scheduledAppointments": 10,
-  "confirmedAppointments": 8,
-  "completedAppointments": 5,
-  "cancelledAppointments": 2,
-  "todayAppointments": 3,
-  "upcomingAppointments": 12
+  "totalCheckpoints": 45,
+  "statusDistribution": {
+    "active": 32,
+    "inactive": 5,
+    "error": 3,
+    "maintenance": 5
+  },
+  "priorityDistribution": {
+    "critical": 8,
+    "high": 15,
+    "normal": 22,
+    "low": 0
+  },
+  "pendingChecks": 7,
+  "recentlyChecked": 25
+}
+```
+
+### Dashboard Data Response
+```json
+{
+  "stats": {
+    "totalCheckpoints": 45,
+    "statusDistribution": {
+      "active": 32,
+      "inactive": 5,
+      "error": 3,
+      "maintenance": 5
+    },
+    "priorityDistribution": {
+      "critical": 8,
+      "high": 15,
+      "normal": 22,
+      "low": 0
+    },
+    "pendingChecks": 7,
+    "recentlyChecked": 25
+  },
+  "pendingChecks": [
+    {
+      "_id": "65a1b2c3d4e5f6789abcdef2",
+      "type": "network_connectivity",
+      "status": "active",
+      "priority": "critical",
+      "location": "Server Room A",
+      "nextCheck": "2024-12-10T14:30:00.000Z",
+      "controller": {
+        "_id": "65a1b2c3d4e5f6789abcdef0",
+        "name": "Main Controller",
+        "code": "CTRL001"
+      }
+    }
+  ],
+  "errorCheckpoints": [
+    {
+      "_id": "65a1b2c3d4e5f6789abcdef3",
+      "type": "database_connection",
+      "status": "error",
+      "priority": "high",
+      "location": "Database Server",
+      "lastCheck": "2024-12-10T13:45:00.000Z",
+      "notes": "Connection timeout"
+    }
+  ],
+  "criticalCheckpoints": [
+    {
+      "_id": "65a1b2c3d4e5f6789abcdef4",
+      "type": "system_health",
+      "status": "active",
+      "priority": "critical",
+      "location": "Main Server",
+      "lastCheck": "2024-12-10T14:00:00.000Z"
+    }
+  ]
 }
 ```
 
@@ -381,17 +580,82 @@ Invoke-RestMethod -Uri "http://localhost:3001/appointments/user/$userId" -Method
 Invoke-RestMethod -Uri "http://localhost:3001/appointments/date/2024-12-01/2024-12-31" -Method GET
 ```
 
+### Create Checkpoint
+```powershell
+$checkpointBody = @{
+    controllerId = "65a1b2c3d4e5f6789abcdef0"  # Replace with actual controller ID
+    type = "system_health"
+    status = "active"
+    location = "Data Center - Floor 2"
+    coordinates = @{
+        latitude = 45.4642
+        longitude = 9.1900
+    }
+    priority = "high"
+    description = "Monitoring system health and performance"
+    notes = "Critical system - monitor every 30 minutes"
+} | ConvertTo-Json -Depth 3
+
+Invoke-RestMethod -Uri "http://localhost:3001/checkpoints" -Method POST -Body $checkpointBody -ContentType "application/json"
+```
+
+### Get Checkpoints by Status
+```powershell
+# Get all active checkpoints
+Invoke-RestMethod -Uri "http://localhost:3001/checkpoints/status/active" -Method GET
+
+# Get all error checkpoints
+Invoke-RestMethod -Uri "http://localhost:3001/checkpoints/status/error" -Method GET
+```
+
+### Update Checkpoint Status
+```powershell
+$statusBody = @{
+    status = "error"
+    notes = "Service not responding - investigating"
+    result = @{
+        message = "HTTP 500 Internal Server Error"
+        data = @{
+            endpoint = "https://api.example.com/health"
+            responseTime = "timeout"
+            statusCode = 500
+        }
+    }
+} | ConvertTo-Json -Depth 3
+
+# Replace with actual checkpoint ID
+$checkpointId = "65a1b2c3d4e5f6789abcdef0"
+Invoke-RestMethod -Uri "http://localhost:3001/checkpoints/$checkpointId/status" -Method PUT -Body $statusBody -ContentType "application/json"
+```
+
+### Get Dashboard Data
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3001/checkpoints/dashboard" -Method GET
+```
+
 ## Notes
 
-1. **MongoDB ObjectId**: User and Appointment IDs are MongoDB ObjectIds (24 character hex strings)
+1. **MongoDB ObjectId**: User, Appointment, and Checkpoint IDs are MongoDB ObjectIds (24 character hex strings)
 2. **Date Format**: Dates must be in YYYY-MM-DD format
 3. **Time Format**: Times must be in HH:MM format (24-hour)
 4. **Appointment Validation**: 
    - Title minimum 3 characters
    - Valid userId required
    - No scheduling conflicts for same user at same date/time
-5. **Status Values**: scheduled, confirmed, completed, cancelled
-6. **Duration**: In minutes (default: 30)
-7. **Pagination**: Default page size is 10, can be customized with `limit` parameter
-8. **Timestamps**: `createdAt` and `updatedAt` are automatically managed
-9. **User Lookup**: Appointment responses include user information via MongoDB aggregation
+5. **Checkpoint Validation**:
+   - Type minimum 2 characters
+   - Valid controllerId required
+   - Status must be: active, inactive, error, maintenance
+   - Priority must be: low, normal, high, critical
+   - Coordinates must have valid latitude (-90 to 90) and longitude (-180 to 180)
+   - Result must be an object with message (string) and data (any type or null)
+6. **Status Values**: 
+   - Appointments: scheduled, confirmed, completed, cancelled
+   - Checkpoints: active, inactive, error, maintenance
+7. **Priority Values**: low, normal, high, critical
+8. **Duration**: In minutes (default: 30 for appointments)
+9. **Pagination**: Default page size is 10, can be customized with `limit` parameter
+10. **Timestamps**: `createdAt` and `updatedAt` are automatically managed
+12. **Auto-scheduling**: Checkpoint status updates automatically set `lastCheck` and `nextCheck` times
+13. **Result Structure**: `result` field contains `message` (string) and `data` (any type or null, e.g., URL, object, array)
+14. **Lookup Relations**: Appointment and Checkpoint responses include related user/controller information via MongoDB aggregation
