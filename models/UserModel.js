@@ -190,7 +190,7 @@ class UserModel {
       if (updateData.email !== undefined) cleanUpdateData.email = updateData.email ? updateData.email.trim() : null;
       if (updateData.status) cleanUpdateData.status = updateData.status;
       if (updateData.checkpointsCompleted) cleanUpdateData.checkpointsCompleted = updateData.checkpointsCompleted;
-      if (updateData.lastCheckpoint) cleanUpdateData.lastCheckpoint = new Date(updateData.lastCheckpoint);
+      if (updateData.lastCheckpoint) cleanUpdateData.lastCheckpoint = new Date(updateData.lastMajorCheckpoint);
 
       // Update user
       const result = await mongoService.findOneAndUpdate(
