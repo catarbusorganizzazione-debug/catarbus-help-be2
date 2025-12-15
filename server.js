@@ -78,6 +78,7 @@ app.get('/', (req, res) => {
         'GET /users/:id': 'Get user by ID',
         'GET /users/search/:term': 'Search users by name or email or username',
         'GET /users/stats': 'Get user statistics',
+        'GET /users/ranking': 'Get user ranking by checkpoints completed',
         'POST /users': 'Create new user',
         'PUT /users/:id': 'Update user by ID',
         'PUT /users/editbyusername/:username': 'Update user by username',
@@ -522,6 +523,25 @@ app.get('/users/stats', async (req, res) => {
   }
 });
 
+// Route to get user ranking
+app.get('/users/ranking', async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const ranking = await UserModel.getRanking({ limit });
+    res.json({
+      success: true,
+      message: 'User ranking retrieved successfully',
+      data: ranking
+    });
+  } catch (error) {
+    console.error('Error fetching user ranking:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
 // Route to search users
 app.get('/users/search/:term', async (req, res) => {
   try {
@@ -677,6 +697,7 @@ async function startServer() {
       console.log('  GET /users/:id                           - Get user by ID');
       console.log('  GET /users/search/:term                  - Search users');
       console.log('  GET /users/stats                         - Get user statistics');
+      console.log('  GET /users/ranking                       - Get user ranking');
       console.log('  POST /users                              - Create new user');
       console.log('  PUT /users/:id                           - Update user');
       console.log('  DELETE /users/:id                        - Delete user');

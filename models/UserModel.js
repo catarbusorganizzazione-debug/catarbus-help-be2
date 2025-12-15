@@ -284,6 +284,45 @@ class UserModel {
       throw new Error(`Failed to get user statistics: ${error.message}`);
     }
   }
+
+  // Get users ranking by checkpoints completed
+  static async getRanking(options = {}) {
+    try {
+      const { limit = 20 } = options;
+      
+      const pipeline = [
+        {
+          $match: {
+            $or: [
+              { isAdminUseOnly: { $ne: true } },
+              { isAdminUseOnly: { $exists: false } }
+            ]
+          }
+        },
+        {
+          $project: {
+            name: 1,
+            checkpointsCompleted: 1
+          }
+        },
+        {
+          $sort: { checkpointsCompleted: -1 }
+        },
+        {
+          $limit: parseInt(limit)
+        }
+      ];
+      
+      const users = await mongoService.aggregate(this.collectionName, pipeline);
+      
+      return {
+        ranking: users,
+        totalUsers: users.length
+      };
+    } catch (error) {
+      throw new Error(`Failed to get user ranking: ${error.message}`);
+    }
+  }
 }
 
 module.exports = UserModel;
