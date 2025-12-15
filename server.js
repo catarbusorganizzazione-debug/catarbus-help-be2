@@ -7,6 +7,7 @@ const UserModel = require('./models/UserModel');
 const AuthModel = require('./models/AuthModel');
 const AppointmentModel = require('./models/AppointmentModel');
 const CheckpointModel = require('./models/CheckpointModel');
+const StreetModel = require('./models/StreetModel');
 
 // Load environment variables
 dotenv.config();
@@ -83,6 +84,9 @@ app.get('/', (req, res) => {
         'PUT /users/:id': 'Update user by ID',
         'PUT /users/editbyusername/:username': 'Update user by username',
         'DELETE /users/:id': 'Delete user by ID'
+      },
+      streets: {
+        'GET /verify': 'Verify street with provaId and location'
       }
     }
   });
@@ -652,6 +656,35 @@ app.delete('/users/:id', async (req, res) => {
   }
 });
 
+// STREET ENDPOINTS
+
+// Verify street endpoint
+app.get('/verify', async (req, res) => {
+  try {
+    const { provaId, location, username } = req.query;
+    
+    if (!provaId || !location || !username) {
+      return res.status(400).json({
+        success: false,
+        error: 'provaId, location, and username query parameters are required'
+      });
+    }
+    
+    const result = await StreetModel.verify(provaId, location, username);
+    res.json({
+      success: true,
+      message: 'Verification completed',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error verifying street:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -701,6 +734,9 @@ async function startServer() {
       console.log('  POST /users                              - Create new user');
       console.log('  PUT /users/:id                           - Update user');
       console.log('  DELETE /users/:id                        - Delete user');
+      console.log('');
+      console.log('  Street endpoints:');
+      console.log('  GET /verify                              - Verify street with provaId and location');
     });
   } catch (error) {
     console.error('Failed to start server:', error);

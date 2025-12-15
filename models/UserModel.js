@@ -302,7 +302,8 @@ class UserModel {
         {
           $project: {
             name: 1,
-            checkpointsCompleted: 1
+            checkpointsCompleted: 1,
+            colour: 1,
           }
         },
         {
