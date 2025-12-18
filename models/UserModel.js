@@ -192,6 +192,7 @@ class UserModel {
       if (updateData.checkpointsCompleted) cleanUpdateData.checkpointsCompleted = updateData.checkpointsCompleted;
       if (updateData.lastMajorCheckpoint) cleanUpdateData.lastCheckpoint = new Date(updateData.lastMajorCheckpoint);
       if (updateData.lastMinorCheckpoint) cleanUpdateData.lastMinorCheckpoint = new Date(updateData.lastMinorCheckpoint);
+      if (updateData.lastHelp) cleanUpdateData.lastHelp = new Date(updateData.lastHelp);
 
       // Update user
       const result = await mongoService.findOneAndUpdate(
