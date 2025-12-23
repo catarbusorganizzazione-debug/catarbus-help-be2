@@ -8,6 +8,7 @@ const AuthModel = require('./models/AuthModel');
 const AppointmentModel = require('./models/AppointmentModel');
 const CheckpointModel = require('./models/CheckpointModel');
 const StreetModel = require('./models/StreetModel');
+const PatternModel = require('./models/PatternModel');
 
 // Load environment variables
 dotenv.config();
@@ -681,6 +682,22 @@ app.get('/verify', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+});
+
+app.post('/check-sequence', async (req, res) => {
+  try {
+    const { sequence } = req.body;
+    
+    const result = await PatternModel.validatePattern(sequence);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(401).json({ 
+      success: false,
+      error: error.message 
     });
   }
 });

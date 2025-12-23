@@ -6,19 +6,19 @@ class UserModel {
   // Validation schema
   static validateUser(userData) {
     const errors = [];
-    
+
     if (!userData.name || typeof userData.name !== 'string' || userData.name.trim().length < 2) {
       errors.push('Name is required and must be at least 2 characters long');
     }
-    
+
     if (userData.email && typeof userData.email !== 'string') {
       errors.push('Email must be a string');
     }
-    
+
     if (userData.email && userData.email.trim() !== '' && !this.isValidEmail(userData.email)) {
       errors.push('Email format is invalid');
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors
@@ -35,15 +35,15 @@ class UserModel {
     try {
       const { page = 1, limit = 10, sort = { createdAt: -1 } } = options;
       const skip = (page - 1) * limit;
-      
+
       const users = await mongoService.findAll(this.collectionName, filter, {
         sort,
         skip,
         limit: parseInt(limit)
       });
-      
+
       const total = await mongoService.countDocuments(this.collectionName, filter);
-      
+
       return {
         users,
         pagination: {
@@ -104,7 +104,7 @@ class UserModel {
 
       // Insert user
       const result = await mongoService.insertOne(this.collectionName, cleanUserData);
-      
+
       // Return the created user
       return await this.findById(result.insertedId);
     } catch (error) {
@@ -184,12 +184,17 @@ class UserModel {
         }
       }
 
+      const currentUser = await mongoService.findOne(
+        this.collectionName,
+        { username: username.trim().toLowerCase() }
+      );
+
       // Clean update data
       const cleanUpdateData = {};
       if (updateData.name) cleanUpdateData.name = updateData.name.trim();
       if (updateData.email !== undefined) cleanUpdateData.email = updateData.email ? updateData.email.trim() : null;
       if (updateData.status) cleanUpdateData.status = updateData.status;
-      if (updateData.checkpointsCompleted) cleanUpdateData.checkpointsCompleted = updateData.checkpointsCompleted;
+      if (updateData.checkpointsCompleted && currentUser !== null &&  Number(currentUser.checkpointsCompleted) - Number(currentUser.checkpointsCompleted) === Number(1)) cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted) + 1;
       if (updateData.lastMajorCheckpoint) cleanUpdateData.lastCheckpoint = new Date(updateData.lastMajorCheckpoint);
       if (updateData.lastMinorCheckpoint) cleanUpdateData.lastMinorCheckpoint = new Date(updateData.lastMinorCheckpoint);
       if (updateData.lastHelp) cleanUpdateData.lastHelp = new Date(updateData.lastHelp);
@@ -215,7 +220,7 @@ class UserModel {
   static async deleteById(id) {
     try {
       const result = await mongoService.deleteById(this.collectionName, id);
-      
+
       if (result.deletedCount === 0) {
         throw new Error('User not found');
       }
@@ -269,7 +274,7 @@ class UserModel {
     try {
       const totalUsers = await mongoService.countDocuments(this.collectionName);
       const activeUsers = await mongoService.countDocuments(this.collectionName, { status: 'active' });
-      
+
       const recentUsers = await mongoService.findAll(this.collectionName, {}, {
         sort: { createdAt: -1 },
         limit: 5
@@ -290,7 +295,7 @@ class UserModel {
   static async getRanking(options = {}) {
     try {
       const { limit = 20 } = options;
-      
+
       const pipeline = [
         {
           $match: {
@@ -314,9 +319,9 @@ class UserModel {
           $limit: parseInt(limit)
         }
       ];
-      
+
       const users = await mongoService.aggregate(this.collectionName, pipeline);
-      
+
       return {
         ranking: users,
         totalUsers: users.length
