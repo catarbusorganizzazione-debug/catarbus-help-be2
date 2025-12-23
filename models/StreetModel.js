@@ -40,7 +40,7 @@ class StreetModel {
         location: normalizedLocation,
         username: username,
         timestamp: new Date(),
-        info: existingRecord.info
+        info: existingRecord !== null ? existingRecord.info : null
       };
       
     } catch (error) {
