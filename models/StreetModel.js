@@ -39,7 +39,8 @@ class StreetModel {
         provaId: provaId,
         location: normalizedLocation,
         username: username,
-        timestamp: new Date()
+        timestamp: new Date(),
+        info: existingRecord.info
       };
       
     } catch (error) {
