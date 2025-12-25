@@ -24,7 +24,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
+
   // Handle preflight OPTIONS requests
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
@@ -99,7 +99,7 @@ app.get('/', (req, res) => {
 app.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
     const result = await AuthModel.authenticateUser(username, password);
     res.json({
       success: true,
@@ -108,9 +108,9 @@ app.post('/auth/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(401).json({ 
+    res.status(401).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -126,9 +126,9 @@ app.post('/auth/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -137,14 +137,14 @@ app.post('/auth/register', async (req, res) => {
 app.post('/auth/change-password', async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.body;
-    
+
     if (!userId || !oldPassword || !newPassword) {
       return res.status(400).json({
         success: false,
         error: 'userId, oldPassword, and newPassword are required'
       });
     }
-    
+
     const result = await AuthModel.changePassword(userId, oldPassword, newPassword);
     res.json({
       success: true,
@@ -152,9 +152,9 @@ app.post('/auth/change-password', async (req, res) => {
     });
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -163,14 +163,14 @@ app.post('/auth/change-password', async (req, res) => {
 app.post('/auth/reset-password', async (req, res) => {
   try {
     const { userId, newPassword } = req.body;
-    
+
     if (!userId || !newPassword) {
       return res.status(400).json({
         success: false,
         error: 'userId and newPassword are required'
       });
     }
-    
+
     const result = await AuthModel.resetPassword(userId, newPassword);
     res.json({
       success: true,
@@ -178,9 +178,9 @@ app.post('/auth/reset-password', async (req, res) => {
     });
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(400).json({ 
+    res.status(400).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -214,7 +214,7 @@ app.get('/appointments/date/:startDate/:endDate', async (req, res) => {
   try {
     const { startDate, endDate } = req.params;
     const { page = 1, limit = 10 } = req.query;
-    
+
     const result = await AppointmentModel.findByDateRange(startDate, endDate, {
       page: parseInt(page),
       limit: parseInt(limit)
@@ -231,7 +231,7 @@ app.get('/appointments/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const { page = 1, limit = 10 } = req.query;
-    
+
     const result = await AppointmentModel.findByUserId(userId, {
       page: parseInt(page),
       limit: parseInt(limit)
@@ -248,10 +248,10 @@ app.get('/appointments', async (req, res) => {
   try {
     const { page = 1, limit = 10, status, date } = req.query;
     const filter = {};
-    
+
     if (status) filter.status = status;
     if (date) filter.date = date;
-    
+
     const result = await AppointmentModel.findAll(filter, {
       page: parseInt(page),
       limit: parseInt(limit)
@@ -267,7 +267,7 @@ app.get('/appointments', async (req, res) => {
 app.get('/appointments/:id', async (req, res) => {
   try {
     const appointment = await AppointmentModel.findById(req.params.id);
-    
+
     if (appointment) {
       res.json(appointment);
     } else {
@@ -349,7 +349,7 @@ app.get('/checkpoints/internalId/:internalId', async (req, res) => {
   try {
     const { internalId } = req.params;
     const { page = 1, limit = 10 } = req.query;
-    
+
     const result = await CheckpointModel.findByInternalId(internalId, {
       page: parseInt(page),
       limit: parseInt(limit)
@@ -365,7 +365,7 @@ app.get('/checkpoints/internalId/:internalId', async (req, res) => {
 app.get('/checkpoints/major', async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    
+
     const result = await CheckpointModel.findMajorCheckpoints({
       page: parseInt(page),
       limit: parseInt(limit)
@@ -382,7 +382,7 @@ app.get('/checkpoints/location/:location', async (req, res) => {
   try {
     const { location } = req.params;
     const { page = 1, limit = 10 } = req.query;
-    
+
     const result = await CheckpointModel.findByLocation(location, {
       page: parseInt(page),
       limit: parseInt(limit)
@@ -399,10 +399,10 @@ app.get('/checkpoints', async (req, res) => {
   try {
     const { page = 1, limit = 10, location, isMajorCheckpoint } = req.query;
     const filter = {};
-    
+
     if (location) filter.location = { $regex: location, $options: 'i' };
     if (isMajorCheckpoint !== undefined) filter.isMajorCheckpoint = isMajorCheckpoint === 'true';
-    
+
     const result = await CheckpointModel.findAll(filter, {
       page: parseInt(page),
       limit: parseInt(limit)
@@ -418,7 +418,7 @@ app.get('/checkpoints', async (req, res) => {
 app.get('/checkpoints/:id', async (req, res) => {
   try {
     const checkpoint = await CheckpointModel.findById(req.params.id);
-    
+
     if (checkpoint) {
       res.json(checkpoint);
     } else {
@@ -450,17 +450,27 @@ app.put('/checkpoints/:id', async (req, res) => {
       message: 'Checkpoint updated successfully',
       data: checkpoint
     });
+
+    // se l'internal id passato in input è relativo ad una prova Major , se sono arrivato fin qui devo updatare user 
+    if (checkpoint && req.body.username) {
+      const user = await UserModel.updateScoreByUsername(req.body.username, checkpoint.isMajorCheckpoint);
+
+      if (user === undefined) {
+        throw new Error('ERRORE DURENTE UPDATE DATI UTENTE');
+      }
+    }
+
   } catch (error) {
     console.error('Error updating checkpoint:', error);
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
+      res.status(404).json({
         success: false,
-        error: error.message 
+        error: error.message
       });
     } else {
-      res.status(400).json({ 
+      res.status(400).json({
         success: false,
-        error: error.message 
+        error: error.message
       });
     }
   }
@@ -470,14 +480,14 @@ app.put('/checkpoints/:id', async (req, res) => {
 app.put('/checkpoints/:id/result', async (req, res) => {
   try {
     const { result } = req.body;
-    
+
     if (!result) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Result is required' 
+        error: 'Result is required'
       });
     }
-    
+
     const checkpoint = await CheckpointModel.updateResultByInternalId(req.params.id, result);
     res.json({
       success: true,
@@ -487,14 +497,14 @@ app.put('/checkpoints/:id/result', async (req, res) => {
   } catch (error) {
     console.error('Error updating checkpoint result:', error);
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
+      res.status(404).json({
         success: false,
-        error: error.message 
+        error: error.message
       });
     } else {
-      res.status(400).json({ 
+      res.status(400).json({
         success: false,
-        error: error.message 
+        error: error.message
       });
     }
   }
@@ -540,9 +550,9 @@ app.get('/users/ranking', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user ranking:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -552,7 +562,7 @@ app.get('/users/search/:term', async (req, res) => {
   try {
     const searchTerm = req.params.term;
     const { page = 1, limit = 10 } = req.query;
-    
+
     const result = await UserModel.search(searchTerm, { page: parseInt(page), limit: parseInt(limit) });
     res.json(result);
   } catch (error) {
@@ -566,7 +576,7 @@ app.get('/users', async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
     const filter = status ? { status } : {};
-    
+
     const result = await UserModel.findAll(filter, { page: parseInt(page), limit: parseInt(limit) });
     res.json(result);
   } catch (error) {
@@ -579,7 +589,7 @@ app.get('/users', async (req, res) => {
 app.get('/users/:id', async (req, res) => {
   try {
     const user = await UserModel.findById(req.params.id);
-    
+
     if (user) {
       res.json(user);
     } else {
@@ -629,14 +639,14 @@ app.put('/users/editbyusername/:username', async (req, res) => {
   } catch (error) {
     console.error('Error updating user by username:', error);
     if (error.message.includes('not found')) {
-      res.status(404).json({ 
+      res.status(404).json({
         success: false,
-        error: error.message 
+        error: error.message
       });
     } else {
-      res.status(400).json({ 
+      res.status(400).json({
         success: false,
-        error: error.message 
+        error: error.message
       });
     }
   }
@@ -663,14 +673,14 @@ app.delete('/users/:id', async (req, res) => {
 app.get('/verify', async (req, res) => {
   try {
     const { provaId, location, username } = req.query;
-    
+
     if (!provaId || !location || !username) {
       return res.status(400).json({
         success: false,
         error: 'provaId, location, and username query parameters are required'
       });
     }
-    
+
     const result = await StreetModel.verify(provaId, location, username);
     res.json({
       success: true,
@@ -689,15 +699,15 @@ app.get('/verify', async (req, res) => {
 app.post('/check-sequence', async (req, res) => {
   try {
     const { sequence } = req.body;
-    
+
     const result = await PatternModel.validatePattern(sequence);
     res.json(result);
-    
+
   } catch (error) {
     console.error('Login error:', error);
-    res.status(401).json({ 
+    res.status(401).json({
       success: false,
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -712,7 +722,7 @@ app.use((err, req, res, next) => {
 async function startServer() {
   try {
     await mongoService.connect();
-    
+
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

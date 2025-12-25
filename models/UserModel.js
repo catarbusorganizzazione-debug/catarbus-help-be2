@@ -194,7 +194,7 @@ class UserModel {
       if (updateData.name) cleanUpdateData.name = updateData.name.trim();
       if (updateData.email !== undefined) cleanUpdateData.email = updateData.email ? updateData.email.trim() : null;
       if (updateData.status) cleanUpdateData.status = updateData.status;
-      if (updateData.checkpointsCompleted && currentUser !== null &&  Number(currentUser.checkpointsCompleted) - Number(currentUser.checkpointsCompleted) === Number(1)) cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted) + 1;
+      if (updateData.checkpointsCompleted && currentUser !== null && Number(currentUser.checkpointsCompleted) - Number(currentUser.checkpointsCompleted) === Number(1)) cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted) + 1;
       if (updateData.lastMajorCheckpoint) cleanUpdateData.lastCheckpoint = new Date(updateData.lastMajorCheckpoint);
       if (updateData.lastMinorCheckpoint) cleanUpdateData.lastMinorCheckpoint = new Date(updateData.lastMinorCheckpoint);
       if (updateData.lastHelp) cleanUpdateData.lastHelp = new Date(updateData.lastHelp);
@@ -330,6 +330,40 @@ class UserModel {
       throw new Error(`Failed to get user ranking: ${error.message}`);
     }
   }
+
+
+  static async updateScoreByUsername(username, isMajorCheckPoint) {
+    try {
+
+      const currentUser = await mongoService.findOne(
+        this.collectionName,
+        { username: username.trim().toLowerCase() }
+      );
+
+      const cleanUpdateData = {};
+      if (isMajorCheckPoint === true) {
+        cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted) + 1;
+      } else {
+        cleanUpdateData.lastMinorCheckpoint = new Date(lastMinorCheckpoint);
+      }
+
+
+      const result = await mongoService.findOneAndUpdate(
+        this.collectionName,
+        { username: username.trim().toLowerCase() },
+        { $set: cleanUpdateData }
+      );
+
+      if (!result) {
+        throw new Error('User not found');
+      }
+
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to update user: ${error.message}`);
+    }
+  }
+
 }
 
 module.exports = UserModel;
