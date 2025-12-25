@@ -294,8 +294,11 @@ class CheckpointModel {
       }
 
       // Return updated checkpoint by finding it again
+
+      const intId =  updateData.internalId || internalId
+
       const updatedCheckpoint = await mongoService.findOne(this.collectionName, {
-        internalId: updateData.internalId.toUpperCase() || internalId.toUpperCase()
+        internalId: intId.toUpperCase()
       });
       
       return updatedCheckpoint;
