@@ -267,7 +267,7 @@ class CheckpointModel {
       // Check if new internalId already exists (if being updated)
       if (updateData.internalId && updateData.internalId !== internalId) {
         const existingCheckpoint = await mongoService.findOne(this.collectionName, {
-          internalId: updateData.internalId
+          internalId: updateData.internalId.toUpperCase()
         });
         if (existingCheckpoint) {
           throw new Error('Checkpoint with this internalId already exists');
@@ -276,7 +276,7 @@ class CheckpointModel {
 
       // Clean update data
       const cleanUpdateData = {};
-      if (updateData.internalId) cleanUpdateData.internalId = updateData.internalId.trim();
+      if (updateData.internalId) cleanUpdateData.internalId = updateData.internalId.trim().toUpperCase();
       if (updateData.location) cleanUpdateData.location = updateData.location.trim();
       if (updateData.description !== undefined) cleanUpdateData.description = updateData.description ? updateData.description.trim() : null;
       if (updateData.isMajorCheckpoint !== undefined) cleanUpdateData.isMajorCheckpoint = updateData.isMajorCheckpoint;
@@ -285,7 +285,7 @@ class CheckpointModel {
       // Update checkpoint
       const result = await mongoService.findOneAndUpdate(
         this.collectionName,
-        { internalId: internalId },
+        { internalId: internalId.toUpperCase() },
         { $set: updateData }
       );
 
@@ -295,7 +295,7 @@ class CheckpointModel {
 
       // Return updated checkpoint by finding it again
       const updatedCheckpoint = await mongoService.findOne(this.collectionName, {
-        internalId: updateData.internalId || internalId
+        internalId: updateData.internalId.toUpperCase() || internalId.toUpperCase()
       });
       
       return updatedCheckpoint;
