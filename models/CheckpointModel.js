@@ -286,7 +286,7 @@ class CheckpointModel {
       const result = await mongoService.findOneAndUpdate(
         this.collectionName,
         { internalId: internalId.toUpperCase() },
-        { $set: updateData }
+        { $set: cleanUpdateData }
       );
 
       if (!result) {
