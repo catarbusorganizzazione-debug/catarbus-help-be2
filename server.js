@@ -453,6 +453,7 @@ app.put('/checkpoints/:id', async (req, res) => {
 
     // se l'internal id passato in input è relativo ad una prova Major , se sono arrivato fin qui devo updatare user 
     if (checkpoint && req.body.username) {
+
       const user = await UserModel.updateScoreByUsername(req.body.username, checkpoint.isMajorCheckpoint);
 
       if (user === undefined) {
