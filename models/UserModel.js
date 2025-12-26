@@ -38,8 +38,7 @@ class UserModel {
 
       const users = await mongoService.findAll(this.collectionName, filter, {
         sort,
-        skip,
-        limit: parseInt(limit)
+        skip
       });
 
       const total = await mongoService.countDocuments(this.collectionName, filter);
