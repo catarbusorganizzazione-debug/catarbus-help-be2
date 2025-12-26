@@ -314,10 +314,11 @@ class CheckpointModel {
       if (result && !this.isValidResult(result)) {
         throw new Error('Result must be an object with message (string) and data (any type or null)');
       }
-
+      let now = new Date();
+      now = now.setHours(now.getHours() +1);
       const updateData = {
         result: result,
-        updatedAt: new Date()
+        updatedAt: new Date(now)
       };
 
       const updateResult = await mongoService.findOneAndUpdate(
@@ -349,9 +350,11 @@ class CheckpointModel {
         throw new Error('Result must be an object with message (string) and data (any type or null)');
       }
 
+      let now = new Date();
+      now = now.setHours(now.getHours() +1);
       const updateData = {
         result: result,
-        updatedAt: new Date()
+        updatedAt: new Date(now)
       };
 
       const updateResult = await mongoService.findOneAndUpdate(
