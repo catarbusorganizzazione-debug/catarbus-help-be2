@@ -342,6 +342,7 @@ class UserModel {
       const cleanUpdateData = {};
       if (isMajorCheckPoint === true) {
         cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted) + 1;
+        cleanUpdateData.lastCheckpoint = new Date();
       } else {
         cleanUpdateData.lastMinorCheckpoint = new Date(lastMinorCheckpoint);
       }
