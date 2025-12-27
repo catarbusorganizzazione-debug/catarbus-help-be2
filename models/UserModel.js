@@ -339,9 +339,8 @@ class UserModel {
         { username: username.trim().toLowerCase() }
       );
 
-      let cleanUpdateData = {};
-      let update = { $set: cleanUpdateData };
-
+      const cleanUpdateData = {};
+ 
       if (isMajorCheckPoint === true) {
         const id = String(internalId ?? "").trim();
         if (!id) throw new Error("internalId is required for major checkpoint");
@@ -355,7 +354,7 @@ class UserModel {
         if (!alreadyHas) {
           cleanUpdateData.checkpointsCompleted =
             Number(currentUser.checkpointsCompleted ?? 0) + 1;
-          update.$addToSet = { majorCheckPoints: id };
+          cleanUpdateData.majorCheckPoints = mcp.push(internalId);
         }
 
         cleanUpdateData.lastCheckpoint = new Date(now);
@@ -368,7 +367,7 @@ class UserModel {
       const result = await mongoService.findOneAndUpdate(
         this.collectionName,
         { username: username.trim().toLowerCase() },
-        update
+        { $set: cleanUpdateData }
       );
 
       if (!result) {
