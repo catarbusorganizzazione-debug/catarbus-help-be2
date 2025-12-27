@@ -368,7 +368,7 @@ class UserModel {
       const result = await mongoService.findOneAndUpdate(
         this.collectionName,
         { username: username.trim().toLowerCase() },
-        { $set: cleanUpdateData }
+        update
       );
 
       if (!result) {
