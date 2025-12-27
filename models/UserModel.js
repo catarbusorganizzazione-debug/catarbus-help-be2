@@ -312,7 +312,7 @@ class UserModel {
           }
         },
         {
-          $sort: { checkpointsCompleted: -1 }
+          $sort: { checkpointsCompleted: -1, lastCheckpoint: 1}
         },
         {
           $limit: parseInt(limit)
