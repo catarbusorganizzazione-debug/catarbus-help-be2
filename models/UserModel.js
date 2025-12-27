@@ -339,8 +339,8 @@ class UserModel {
         { username: username.trim().toLowerCase() }
       );
 
-      const cleanUpdateData = {};
-      const update = { $set: cleanUpdateData };
+      let cleanUpdateData = {};
+      let update = { $set: cleanUpdateData };
 
       if (isMajorCheckPoint === true) {
         const id = String(internalId ?? "").trim();
