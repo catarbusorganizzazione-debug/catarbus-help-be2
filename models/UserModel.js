@@ -312,7 +312,7 @@ class UserModel {
           }
         },
         {
-          $sort: { checkpointsCompleted: -1, lastCheckpoint: 1 }
+          $sort: { checkpointsCompleted: -1, lastCheckpoint: 1}
         },
         {
           $limit: parseInt(limit)
@@ -331,7 +331,7 @@ class UserModel {
   }
 
 
-  static async updateScoreByUsername(username, isMajorCheckPoint, internalId) {
+  static async updateScoreByUsername(username, isMajorCheckPoint) {
     try {
 
       const currentUser = await mongoService.findOne(
@@ -340,13 +340,13 @@ class UserModel {
       );
 
       const cleanUpdateData = {};
-
       if (isMajorCheckPoint === true) {
-        let now = new Date();
-        now = now.setHours(now.getHours() + 1);
-        cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted ?? 0) + 1;
-        cleanUpdateData.lastCheckpoint = now;
-        cleanUpdateData.lastHelp = now;
+
+      let now = new Date();
+      now = now.setHours(now.getHours() + 1); 
+        cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted) + 1;
+        cleanUpdateData.lastCheckpoint = new Date(now);
+        cleanUpdateData.lastHelp = new Date(now);
       } else {
         cleanUpdateData.lastMinorCheckpoint = new Date(lastMinorCheckpoint);
       }
