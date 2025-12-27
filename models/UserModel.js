@@ -342,24 +342,11 @@ class UserModel {
       const cleanUpdateData = {};
 
       if (isMajorCheckPoint === true) {
-        const id = String(internalId ?? "").trim();
-        if (!id) throw new Error("internalId is required for major checkpoint");
-
-        const mcp = Array.isArray(currentUser.majorCheckPoints)
-          ? currentUser.majorCheckPoints.map(x => String(x).trim())
-          : [];
-
-        const alreadyHas = mcp.includes(id);
-
-        if (!alreadyHas) {
-          cleanUpdateData.checkpointsCompleted =
-            Number(currentUser.checkpointsCompleted ?? 0) + 1;
-          mcp.push(internalId)
-          cleanUpdateData.majorCheckPoints = mcp;
-        }
-
-        cleanUpdateData.lastCheckpoint = new Date(now);
-        cleanUpdateData.lastHelp = new Date(now);
+        let now = new Date();
+        now = now.setHours(now.getHours() + 1);
+        cleanUpdateData.checkpointsCompleted = Number(currentUser.checkpointsCompleted ?? 0) + 1;
+        cleanUpdateData.lastCheckpoint = now;
+        cleanUpdateData.lastHelp = now;
       } else {
         cleanUpdateData.lastMinorCheckpoint = new Date(lastMinorCheckpoint);
       }
