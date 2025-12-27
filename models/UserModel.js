@@ -340,19 +340,23 @@ class UserModel {
       );
 
       const cleanUpdateData = {};
+      const update = { $set: cleanUpdateData };
+
       if (isMajorCheckPoint === true) {
+        const id = String(internalId ?? "").trim();
+        if (!id) throw new Error("internalId is required for major checkpoint");
 
-      let now = new Date();
-      now = now.setHours(now.getHours() + 1); 
+        const mcp = Array.isArray(currentUser.majorCheckPoints)
+          ? currentUser.majorCheckPoints.map(x => String(x).trim())
+          : [];
 
-      const alreadyHas = Array.isArray(currentUser.majorCheckPoints)
-        && currentUser.majorCheckPoints.includes(internalId);
+        const alreadyHas = mcp.includes(id);
 
-       if (!alreadyHas) {
-        cleanUpdateData.checkpointsCompleted =
-          Number(currentUser.checkpointsCompleted) + 1;
-          update.$addToSet = { majorCheckPoints: internalId };
-      }
+        if (!alreadyHas) {
+          cleanUpdateData.checkpointsCompleted =
+            Number(currentUser.checkpointsCompleted ?? 0) + 1;
+          update.$addToSet = { majorCheckPoints: id };
+        }
 
         cleanUpdateData.lastCheckpoint = new Date(now);
         cleanUpdateData.lastHelp = new Date(now);
