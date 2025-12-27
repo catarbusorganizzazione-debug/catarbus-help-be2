@@ -312,7 +312,7 @@ class UserModel {
           }
         },
         {
-          $sort: { checkpointsCompleted: -1, lastCheckpoint: 1}
+          $sort: { checkpointsCompleted: -1, lastCheckpoint: 1 }
         },
         {
           $limit: parseInt(limit)
@@ -340,7 +340,7 @@ class UserModel {
       );
 
       const cleanUpdateData = {};
- 
+
       if (isMajorCheckPoint === true) {
         const id = String(internalId ?? "").trim();
         if (!id) throw new Error("internalId is required for major checkpoint");
@@ -354,7 +354,8 @@ class UserModel {
         if (!alreadyHas) {
           cleanUpdateData.checkpointsCompleted =
             Number(currentUser.checkpointsCompleted ?? 0) + 1;
-          cleanUpdateData.majorCheckPoints = mcp.push(internalId);
+          mcp.push(internalId)
+          cleanUpdateData.majorCheckPoints = mcp;
         }
 
         cleanUpdateData.lastCheckpoint = new Date(now);
